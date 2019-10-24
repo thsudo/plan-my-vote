@@ -2,10 +2,16 @@
   "name": "repository-viewer",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Tara Hackley",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "express": "^4.17.1",
+    "hbs": "^4.0.6",
+    "request": "^2.88.0",
+    "request-promise": "^4.2.4"
+  }
 }
