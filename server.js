@@ -8,7 +8,6 @@ const headers = {
     'User-Agent' : `${process.env.USERNAME}`,
     'Authorization' : `Bearer ${process.env.AUTH_TOKEN}`
 };
-const port = 3000;
 
 const app = express();
 
@@ -31,21 +30,11 @@ app.post('/search', async (req, res, next) => {
         json: true
     }
     request.get(options).then((pullRequests) => {
+        // console.log(pullRequests);
         // It should display a list of open pull requests 
         // along with the number of commits in that PR, the 
         // number of comments on the PR, and the user that opened it.
-        return pullRequests.map(pr => {
-            return {
-                url: pr['html_url'],
-                commit_url: pr['commits_url'],
-                commit_count: 0,
-                comments_url: pr['comments_url'],
-                comment_count: 0,
-                creator: pr['user']['login'],
-                title: pr['title']
-            }
-        });
-    }).then(prs => {
+        let prs = mapPullRequests(pullRequests);
         asyncForEach(prs, async (pr) => {
             let commentCount = await getCommentsAndCommitsCounts(pr.comments_url);
             let commitCount = await getCommentsAndCommitsCounts(pr.commit_url);
@@ -58,6 +47,19 @@ app.post('/search', async (req, res, next) => {
 
 });
 
+mapPullRequests = (apiResponse) => {
+    return apiResponse.map(pr => {
+        return {
+            url: pr['html_url'],
+            commit_url: pr['commits_url'],
+            commit_count: 0,
+            comments_url: pr['comments_url'],
+            comment_count: 0,
+            creator: pr['user']['login'],
+            title: pr['title']
+        }
+    });
+}
 
 getCommentsAndCommitsCounts = async (commentUrl) => {
     let options = {
@@ -78,5 +80,5 @@ asyncForEach = async (prArray, callback) => {
     }
 }
 
-
-app.listen(port, () => console.log(`App listening on port ${port}`));
+app.mapPullRequests = mapPullRequests
+module.exports = app;
