@@ -30,10 +30,6 @@ app.post('/search', async (req, res, next) => {
         json: true
     }
     request.get(options).then((pullRequests) => {
-        // console.log(pullRequests);
-        // It should display a list of open pull requests 
-        // along with the number of commits in that PR, the 
-        // number of comments on the PR, and the user that opened it.
         let prs = mapPullRequests(pullRequests);
         asyncForEach(prs, async (pr) => {
             let commentCount = await getCommentsAndCommitsCounts(pr.comments_url);
