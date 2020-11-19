@@ -10,7 +10,7 @@ of commits and comments on it.
 
     npm install
 
-Make a copy of the `.template-env` file and call it `.env` then update it with your GitHub username and auth token.
+Make a copy of the `.template-env` file and call it `.env` then update it with your emaill address, Gmail app password, Twilio auth token, Twilio account SID, and your Twilio phone number.
 
 ## Running
 
