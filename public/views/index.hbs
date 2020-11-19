@@ -5,16 +5,22 @@
     </head>
     <body>
         <div class="container">
-            <form action="/search" method="post">
+            <form action="/plan-my-vote" method="post">
                 <h1>{{title}}</h1>
-                <label for="url-field">GitHub Repo URL:</label>
-                <input id="url-field" name="url" type="url" placeholder="GitHub Repo URL">
+                <input id="address-1" name="address-1" type="text" placeholder="Address 1" required>
+                <input id="address-2" name="address-2" type="text" placeholder="Address 2">
+                <input id="city" name="city" type="text" placeholder="City" required>
+                <select name="state" id="state" required>
+                    <option value="" selected disabled hidden>State</option>
+                    {{#each states}}
+                        <option value="{{abbr}}">{{name}}</option>
+                    {{/each}}
+                </select>
+                <input id="zip" name="zip" type="text" pattern="[0-9]{5}" placeholder="Zip Code">
+
                 <button type="submit">Search</button>
             </form>
         </div>
         
     </body>
 </html>
-
-
-

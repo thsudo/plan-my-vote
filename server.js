@@ -1,15 +1,22 @@
 const express = require('express');
 const request = require('request-promise');
 const path = require('path');
+const nodemailer = require('nodemailer');
+
+//twilio
+const twilio = require('twilio');
+
+// vars
+const states = require('./states.js');
+const elections = require('./data.js');
 
 require('dotenv').config()
 
-const headers = {
-    'User-Agent' : `${process.env.USERNAME}`,
-    'Authorization' : `Bearer ${process.env.AUTH_TOKEN}`
-};
+const twil_client = new twilio(`${process.env.TWILIO_ACCOUNT_SID}`, `${process.env.TWILIO_AUTH_TOKEN}`)
 
 const app = express();
+
+app.use(express.static(__dirname + '/public'));
 
 app.set('views', path.join(__dirname, './public/views'));
 app.set('view engine', 'hbs');
@@ -18,63 +25,91 @@ app.use(express.json());
 app.use(express.urlencoded({extended: true}));
 
 app.get('/', (req, res, next) => {
-    res.render('index', {title: 'Search GitHub Repo'});
+    res.render('index', {title: 'Plan your vote', states: states});
 });
 
-app.post('/search', async (req, res, next) => {
-    let path = new URL(req.body['url']).pathname;
-    
-    let options = {
-        url: `https://api.github.com/repos${path}/pulls`,
-        headers: headers,
-        json: true
+app.post('/plan-my-vote', async (req, res, next) => {
+    console.log(req.body);
+
+    res.render('plan-my-vote', {title: `Ballot for ${req.body.state}`, elections: elections});
+
+});
+
+app.post('/send-email', (req, res, next) => {
+    console.log(req.body)
+
+    const formatName = (str) => {
+        let arr = str.split('-');
+        for (let i = 0; i < arr.length; i++) {
+            arr[i] = arr[i].replace(arr[i].charAt(0),  arr[i].charAt(0).toUpperCase());
+        }
+        return arr.join(" ");
+    } 
+
+    const capitalize = (str) => {
+        return str.charAt(0).toUpperCase() + str.slice(1);
     }
-    request.get(options).then((pullRequests) => {
-        let prs = mapPullRequests(pullRequests);
-        asyncForEach(prs, async (pr) => {
-            let commentCount = await getCommentsAndCommitsCounts(pr.comments_url);
-            let commitCount = await getCommentsAndCommitsCounts(pr.commit_url);
-            pr.comment_count = commentCount;
-            pr.commit_count = commitCount;
-        }).then(() => {
-            res.render('results', {prs: prs, title: 'Search Results'});
-        }).catch(err => console.error(err));
-    }).catch(err => console.error(err));
 
-});
+    const votingPlan = `Your voting plan:
+    - U.S. House District 5: ${formatName(req.body.candidate)}
+    - Ballot Measure 2A: ${capitalize(req.body['2A'])}
+    - Ballot Measure 2B: ${capitalize(req.body['2B'])}`;
 
-mapPullRequests = (apiResponse) => {
-    return apiResponse.map(pr => {
-        return {
-            url: pr['html_url'],
-            commit_url: pr['commits_url'],
-            commit_count: 0,
-            comments_url: pr['comments_url'],
-            comment_count: 0,
-            creator: pr['user']['login'],
-            title: pr['title']
+    //EMAIL RELATED
+    let transporter = nodemailer.createTransport({
+        service: 'gmail',
+        auth: {
+            user: `${process.env.EMAIL}`,
+            pass: `${process.env.APP_PW}`
         }
     });
-}
 
-getCommentsAndCommitsCounts = async (commentUrl) => {
-    let options = {
-        url: commentUrl,
-        headers: headers,
-        json: true
+    const emailText = `Thank you for using Plan to Vote! \n\n Use this calendar event to schedule your time to get to the polls and vote: ${buildCalendarEventLink()}.\n\nHere is a copy of your voting plan. Feel free to print this out and take it to the polls with you or view it on your device at the polls.\n\n${votingPlan}`;
+
+    let mailOptions = {
+        from: `${process.env.EMAIL}`,
+        to: `${process.env.EMAIL}`,
+        subject: 'Your voting plan! Save this email.',
+        text: emailText
     };
-    return request.get(options).then(res => {
-        return Promise.resolve(res.length);
 
-    }).catch(err => console.error(err));
+    console.log(emailText);
 
-}
+    transporter.sendMail(mailOptions, function(error, info){
+        if (error) {
+            console.log(error);
+        } else {
+            console.log('Email sent: ' + info.response);
+        }
+    });
 
-asyncForEach = async (prArray, callback) => {
-    for (let index = 0; index < prArray.length; index++) {
-        await callback(prArray[index], index, prArray);
-    }
-}
+    //SMS RELATED
+    const smsText = `Thanks for using plan to vote!\n\n ${votingPlan}`
 
-app.mapPullRequests = mapPullRequests
+    twil_client.messages.create({
+        to: `+1${req.body.phone}`,
+        from: `${process.env.TWILIO_FROM_NUMBER}`,
+        body: smsText
+    });
+
+    res.render('thanks', {title: "Thank you for planning your vote!"})
+});
+
+buildCalendarEventLink = () => {
+    const baseLink = 'https://calendar.google.com/calendar/r/eventedit\?';
+    const electionDayDate = 20201201;
+
+    const startTime = 'T12:00:00';
+    const endTime = 'T14:00:00';
+    const text = 'TIME+TO+VOTE:+2020+US+House+District+5+Special+Election';
+    const location = 'TBD';
+    const details = `Holding+time+to+get+to+the+polls+so+I+can+vote+in+the+2020+special+election\.`;
+    var link = baseLink + 'dates=' + electionDayDate + startTime + '/' + electionDayDate + endTime + '&details=' + details + '&location&text=' + text + '&trp=false';
+    console.log(link);
+    return link;
+  }
+
+ 
+
+
 module.exports = app;

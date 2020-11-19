@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <link rel="stylesheet" href="./styles.css">
+        <title>Upcoming elections in Georgia</title>
+    </head>
+    <body>
+        <div class="container">
+            <h1>Plan your vote for the upcoming Georgia election on {{date}}.</h1>
+
+            Enter your email address if you would like us to email you a copy of your voting plan.
+            <form action="/send-email" method="post">
+                <input id="email" type="text" name="email" placeholder="Email">
+                <input id="phone" type="tel" name="phone" placeholder="Phone Number">
+                <button type="submit">Send me my voting plan</button>
+            
+
+                {{#each elections}} 
+                    <h3>{{name}}</h3>
+                    <table>
+                        <tr>{{#each candidates}}
+                            <th>
+                            <p>Name: {{name}}</p>
+                            <p>Party: {{party}}</p>
+                            
+                            {{#if platform}}
+                                <p>Platforms and Issues:<br><a href={{platform}}>{{platform}}</a></p>
+                                {{else}}
+                                <p>Campaign Site:<br><a href={{campaign_site}}>{{campaign_site}}</a></p>
+                            {{/if}}
+                            <input type="radio" id={{name}} name="candidate" value="{{name}}">
+                            <label for="{{name}}">I plan to vote for {{name}}.</label>
+                        </th>
+                        {{/each}}
+                        </tr>
+                    </table>
+
+                    <h3>Ballot Measures</h3>
+                    {{#each measures}}
+                        <table>
+                            <tr>
+                                
+                                <th style="padding: 30px; font-weight: normal">
+                                    <p>{{measure}}</p>
+                                    <p><b>Description:</b> {{description}}</p>
+
+                                    <button class="accordion" type="button">Learn more about {{measure}}</button>
+                                    <div class="panel">
+                                        <p>A "<b>yes</b>" vote {{in_favor}}</p>
+                                        <br>
+                                        <p>A "<b>no</b>" vote {{against}}</p>
+                                    </div>
+
+                                    <input type="radio" id="in-favor" name={{measure_value}} value="yes">
+                                    <label for="in-favor">I plan to vote "Yes" on {{measure}}.</label><br>
+                                    <input type="radio" id="against" name={{measure_value}} value="no">
+                                    <label for="against">I plan to vote "No" on {{measure}}.</label><br>
+
+                                </th>
+                                
+                            </tr>
+                        </table>
+                    {{/each}}
+
+                {{/each}}
+            </form>
+        </div>
+        <script>
+var acc = document.getElementsByClassName("accordion");
+var i;
+
+for (i = 0; i < acc.length; i++) {
+  acc[i].addEventListener("click", function(e) {
+
+    /* Toggle between adding and removing the "active" class,
+    to highlight the button that controls the panel */
+    this.classList.toggle("active");
+
+    /* Toggle between hiding and showing the active panel */
+    var panel = this.nextElementSibling;
+    if (panel.style.display === "block") {
+      panel.style.display = "none";
+    } else {
+      panel.style.display = "block";
+    }
+  });
+}
+
+        </script>
+    </body>
+</html>
